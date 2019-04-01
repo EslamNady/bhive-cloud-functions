@@ -36,9 +36,9 @@ export const onAttendanceUpdate = functions.database.ref('/Employees/{empID}/att
             const day = empSnap.child("attendance/" + date + "/day").val();
 
 
-            if (outTime === "null") {
+            if (outTime === "null" && inTime === "null") {
                 if (empSnap.child("timeTable/" + day + "/out").val() !== "null") {
-                    if (!empSnap.child("vacation/" + date).exists()) {
+                    if (!empSnap.child("vacations/" + date).exists()) {
                         const MD = date.substring(3, date.length);
                         if (!snapshot.child("Holidays/" + MD).exists()) {
                             const working_days_num = parseInt(empSnap.child('working_days_num').val());
@@ -47,6 +47,7 @@ export const onAttendanceUpdate = functions.database.ref('/Employees/{empID}/att
                             const dayScore = (-2.5) / ((working_days_num + 1) / 1.0001);
                             attendanceScore = attendanceScore + dayScore;
                             empSnap.ref.child('working_days_num').set(working_days_num + 1).catch(() => null);
+                            empSnap.ref.child('attended_days_num').set(parseInt(empSnap.child('attended_days_num').val()) + 1).catch(() => null);
                             empSnap.ref.child('attendanceScore').set(attendanceScore).catch(() => null);
                             empSnap.ref.child('lastDayScore').set(dayScore).catch(() => null);
 
@@ -131,19 +132,19 @@ export const onAttendanceUpdate = functions.database.ref('/Employees/{empID}/att
 
                     const working_days_num = parseInt(empSnap.child('working_days_num').val());
                     let attendanceScore = parseFloat(empSnap.child('attendanceScore').val());
-                    const lastDayScore = parseInt(empSnap.child('lastDayScore').val());
-                    const dayScore = (inScore + outScore) / ((working_days_num + 1) / 1.0001);
+                    const lastDayScore = parseFloat(empSnap.child('lastDayScore').val());
 
 
-
-                    if (change.before.child("Employees/" + empID + "/attendance/" + date + "/out").exists()) {
-
-                        attendanceScore = attendanceScore - lastDayScore + dayScore;
+                    // empSnap.ref.child('test').set(change.before.val()).catch(() => null);
+                    if (change.before.child("out").exists()) {
+                        const dayScore = (inScore + outScore) / ((working_days_num) / 1.0001);
+                        attendanceScore = attendanceScore - lastDayScore;
+                        attendanceScore = attendanceScore + dayScore;
                         empSnap.ref.child('attendanceScore').set(attendanceScore).catch(() => null);
                         empSnap.ref.child('lastDayScore').set(dayScore).catch(() => null);
 
                     } else {
-
+                        const dayScore = (inScore + outScore) / ((working_days_num + 1) / 1.0001);
                         attendanceScore = attendanceScore + dayScore;
                         empSnap.ref.child('working_days_num').set(working_days_num + 1).catch(() => null);
                         empSnap.ref.child('attendanceScore').set(attendanceScore).catch(() => null);
