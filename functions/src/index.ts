@@ -45,10 +45,10 @@ export const onAttendanceUpdate = functions.database.ref('/Employees/{empID}/att
                 outkey = child.key;
                 outTime = child.child('time').val();
             });
-            if (inkey === '1' && outkey !== '1') {
-                empSnap.ref.child(`workingHours/${date}/totalHours`).set(0).catch(() => null);
-                empSnap.ref.child(`workingHours/${date}/lastIntervalhours`).set(0).catch(() => null);
-            }
+            // if (inkey === '1') {
+            //     empSnap.ref.child(`workingHours/${date}/totalHours`).set(0).catch(() => null);
+            //     empSnap.ref.child(`workingHours/${date}/lastIntervalhours`).set(0).catch(() => null);
+            // }
             const inTimeIsNull = empSnap.child("attendance/" + date + "/in").val();
             const outTimeIsNull = empSnap.child("attendance/" + date + "/out").val();
             const day = empSnap.child("attendance/" + date + "/day").val();
@@ -111,9 +111,9 @@ export const onAttendanceUpdate = functions.database.ref('/Employees/{empID}/att
 
                         const dayWorkingHours = (weekDayOut_H + (weekDayOut_M * 0.25) / 15.0) - (weekDayIn_H + (weekDayIn_M * 0.25) / 15.0);
 
-                        empSnap.ref.child('test').set(workingHours).catch(() => null)
+
                         if (change.before.child(`out/${outkey}`).exists()) {
-                            const temp = parseFloat(empSnap.child(`workingHours/${date}/totalHours`).val()) - parseFloat(empSnap.child(`workingHours/${date}/lastIntervalhours`).val()) + workingHours;
+                            const temp = (inkey === '1' ? 0 : parseFloat(empSnap.child(`workingHours/${date}/totalHours`).val()) - parseFloat(empSnap.child(`workingHours/${date}/lastIntervalhours`).val())) + workingHours;
 
                             empSnap.ref.child(`workingHours/${date}/totalHours`).set(temp).catch(() => null);
                             empSnap.ref.child(`workingHours/${date}/lastIntervalhours`).set(workingHours).catch(() => null);
@@ -121,7 +121,7 @@ export const onAttendanceUpdate = functions.database.ref('/Employees/{empID}/att
                             workingHours = temp + workingHours;
 
                         } else {
-                            const temp = parseFloat(empSnap.child(`workingHours/${date}/totalHours`).val()) + workingHours;
+                            const temp = (inkey === '1' ? 0 : parseFloat(empSnap.child(`workingHours/${date}/totalHours`).val())) + workingHours;
 
                             empSnap.ref.child(`workingHours/${date}/totalHours`).set(temp).catch(() => null);
                             empSnap.ref.child(`workingHours/${date}/lastIntervalhours`).set(workingHours).catch(() => null);
@@ -131,28 +131,28 @@ export const onAttendanceUpdate = functions.database.ref('/Employees/{empID}/att
 
                         const workingHoursDiff = workingHours - dayWorkingHours;
 
-                        let score = 0
+                        let score = 0;
 
                         if (workingHoursDiff < -3) {
                             score = -2.5;
-                        } else if (workingHours < -2 && workingHoursDiff >= -3) {
+                        } else if (workingHoursDiff < -2 && workingHoursDiff >= -3) {
                             score = -1.5;
                         }
-                        else if (workingHours < -1 && workingHoursDiff >= -2) {
+                        else if (workingHoursDiff < -1 && workingHoursDiff >= -2) {
                             score = -1.25;
-                        } else if (workingHours < -0.25 && workingHoursDiff >= -1) {
+                        } else if (workingHoursDiff < -0.25 && workingHoursDiff >= -1) {
                             score = -1;
-                        } else if (workingHours < 0.25 && workingHoursDiff >= -0.25) {
+                        } else if (workingHoursDiff < 0.25 && workingHoursDiff >= -0.25) {
                             score = 2.5;
-                        } else if (workingHours < 1 && workingHoursDiff >= 0.25) {
+                        } else if (workingHoursDiff < 1 && workingHoursDiff >= 0.25) {
                             score = 2.75;
-                        } else if (workingHours < 2 && workingHoursDiff >= 1) {
+                        } else if (workingHoursDiff < 2 && workingHoursDiff >= 1) {
                             score = 3;
-                        } else if (workingHours < 3 && workingHoursDiff >= 2) {
+                        } else if (workingHoursDiff < 3 && workingHoursDiff >= 2) {
                             score = 3.5;
-                        } else if (workingHours < 3 && workingHoursDiff >= 2) {
+                        } else if (workingHoursDiff < 3 && workingHoursDiff >= 2) {
                             score = 3.5;
-                        } else if (workingHours < 4 && workingHoursDiff >= 3) {
+                        } else if (workingHoursDiff < 4 && workingHoursDiff >= 3) {
                             score = 3.75;
                         } else if (workingHoursDiff >= 4) {
                             score = 4;
@@ -165,9 +165,10 @@ export const onAttendanceUpdate = functions.database.ref('/Employees/{empID}/att
                         const lastDayScore = parseFloat(empSnap.child('lastDayScore').val());
 
 
-                        // empSnap.ref.child('test').set(change.before.val()).catch(() => null);
+
                         if (change.before.child(`out/${outkey}`).exists()) {
-                            const dayScore = (score) / ((working_days_num) / 1.0001);
+                            const dayScore = (score) / ((working_days_num === 0 ? 1 : working_days_num) / 1.0001);
+                            empSnap.ref.child('test').set("a7eh").catch(() => null);
                             attendanceScore = attendanceScore - lastDayScore;
                             attendanceScore = attendanceScore + dayScore;
                             empSnap.ref.child('attendanceScore').set(attendanceScore).catch(() => null);
@@ -175,16 +176,19 @@ export const onAttendanceUpdate = functions.database.ref('/Employees/{empID}/att
 
                         } else {
                             const dayScore = (score) / ((working_days_num + 1) / 1.0001);
+
+
                             attendanceScore = attendanceScore + dayScore;
                             empSnap.ref.child('attendanceScore').set(attendanceScore).catch(() => null);
                             empSnap.ref.child('lastDayScore').set(dayScore).catch(() => null);
+
                             if (inkey === '1') {
                                 empSnap.ref.child('working_days_num').set(working_days_num + 1).catch(() => null);
                                 empSnap.ref.child('attended_days_num').set(parseInt(empSnap.child('attended_days_num').val()) + 1).catch(() => null);
 
                             }
-
                         }
+
                     }
 
                 }
